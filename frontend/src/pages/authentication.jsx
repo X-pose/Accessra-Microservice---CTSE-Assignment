@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import logo from "/Logo.png";
+import axiosInstance from "../api/axiosInstance";
 
 const Authentication = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,6 +16,25 @@ const Authentication = () => {
     setRePassword("");
     setShowPassword(false);
   };
+
+  const handleSignIn = async()=> {
+    const payload = {
+      email: email, 
+      password: password,
+    }
+
+    const response = await axiosInstance.post("/accessra_microservice/auth/sign-in", payload, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if(response.status === 201) {
+      const token = response?.data?.token;
+      localStorage.setItem("jsonwebtoken", token);
+      window.location.href = "/dashboard";
+    }
+  }
 
   return (
     <div className="flex h-screen">
@@ -133,6 +153,14 @@ const Authentication = () => {
 
             <button
               type="submit"
+              onClick={(e) => {
+                e.preventDefault();
+                if (isLogin) {
+                  handleSignIn();
+                } else {
+                  // Handle sign-up logic here
+                }
+              }}
               className="w-full bg-[var(--accent)] cursor-pointer text-white py-2 rounded-lg hover:bg-blue-700"
             >
               {isLogin ? "Login" : "Sign Up"}
