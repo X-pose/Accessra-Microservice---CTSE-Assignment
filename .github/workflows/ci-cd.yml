@@ -24,15 +24,18 @@ jobs:
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           EOF
 
-      - name: ⚙️ Setup Node.js
+      - name: ⚙️ Setup Node.js for Microservice
+        working-directory: backend/accessra_microservice
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Install Microservice dependencies
+        working-directory: backend/accessra_microservice
         run: npm ci
 
-      - name: SonarCloud Scan
+      - name: SonarCloud Scan (Microservice)
+        working-directory: backend/accessra_microservice
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: .
@@ -75,7 +78,8 @@ jobs:
           CHANGED=$(git diff --name-only HEAD^ HEAD)
           echo "changed_files=$CHANGED" >> $GITHUB_OUTPUT
 
-      - name: ⚙️ Setup Node.js (for frontend)
+      - name: ⚙️ Setup Node.js for Frontend
+        if: contains(steps.detect_frontend.outputs.changed_files, 'frontend/')
         uses: actions/setup-node@v3
         with:
           node-version: '20'
