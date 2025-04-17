@@ -34,6 +34,7 @@ const Authentication = () => {
       localStorage.setItem("jsonwebtoken", token);
       window.location.href = "/dashboard";
     }
+    
   }
 
   return (
