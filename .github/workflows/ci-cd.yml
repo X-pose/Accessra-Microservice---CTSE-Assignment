@@ -38,8 +38,7 @@ jobs:
         with:
           projectBaseDir: backend/accessra_microservice
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_PROJECT_KEY: ChillBroh_Accessra-API
           SONAR_ORGANIZATION: chillbroh
 
