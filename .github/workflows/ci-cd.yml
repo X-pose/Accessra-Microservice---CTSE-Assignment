@@ -25,7 +25,6 @@ jobs:
           EOF
 
       - name: ⚙️ Setup Node.js for Microservice
-        working-directory: backend/accessra_microservice
         uses: actions/setup-node@v3
         with:
           node-version: '20'
@@ -35,22 +34,26 @@ jobs:
         run: npm ci
 
       - name: SonarCloud Scan (Microservice)
-        working-directory: backend/accessra_microservice
         uses: SonarSource/sonarcloud-github-action@v2
         with:
-          projectBaseDir: .
+          projectBaseDir: backend/accessra_microservice
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_PROJECT_KEY: ChillBroh_Accessra-API
           SONAR_ORGANIZATION: chillbroh
 
       - name: Build Docker Image
-        run: docker build -t chillbroh98/accessra .
+        working-directory: backend
+        run: docker build -t chillbroh98/accessra:latest .
 
-      - name: Login to Docker Hub
-        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Publish image to Docker Hub
+      - name: Publish image to Docker Hub
         run: docker push chillbroh98/accessra:latest
 
   deploy:
@@ -59,6 +62,8 @@ jobs:
     steps:
       - name: 🛎 Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # To enable diff detection
 
       - name: 🔒 Recreate .env in backend root
         run: |
@@ -90,11 +95,15 @@ jobs:
           cd frontend
           npm ci
           npm run build
+          mkdir -p ../backend/nginx/statics/
           rm -rf ../backend/nginx/statics/*
           cp -R dist/* ../backend/nginx/statics/
 
-      - name: 🔑 Login to Docker Hub
-        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: 🔑 Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: 📥 Pull all images & Deploy backend
         working-directory: backend
