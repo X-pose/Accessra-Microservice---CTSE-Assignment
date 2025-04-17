@@ -1,0 +1,49 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    # assumes your self-hosted runner has Docker & Docker Compose installed
+    runs-on: self-hosted
+    steps:
+      - name: 🛎 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🔒 Create .env in accessra_microservice root
+        run: |
+          mkdir -p backend/accessra_microservice
+          echo "PROD_DB_HOST=${{ secrets.PROD_DB_HOST }}"      >> backend/accessra_microservice/.env
+          echo "PROD_DB_PORT=${{ secrets.PROD_DB_PORT }}"      >> backend/accessra_microservice/.env
+          echo "PROD_DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}" >> backend/accessra_microservice/.env
+          echo "PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> backend/accessra_microservice/.env
+          echo "PROD_DB_NAME=${{ secrets.PROD_DB_NAME }}"      >> backend/accessra_microservice/.env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}"          >> backend/accessra_microservice/.env
+
+      - name: 🔍 Detect frontend changes
+        id: detect_frontend
+        run: |
+          CHANGED=$(git diff --name-only HEAD^ HEAD)
+          echo "changed_files=$CHANGED" >> $GITHUB_OUTPUT
+
+      - name: ⚙️ Setup Node.js (for possible frontend build)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: 🏗️ Build frontend & sync static assets
+        if: contains(steps.detect_frontend.outputs.changed_files, 'frontend/')
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+          rm -rf ../backend/nginx/statics/*
+          cp -R dist/* ../backend/nginx/statics/
+
+      - name: 🚀 Deploy with Docker Compose
+        working-directory: backend
+        run: |
+          docker-compose up -d --build
