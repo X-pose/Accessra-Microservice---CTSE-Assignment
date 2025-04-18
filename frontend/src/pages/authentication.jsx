@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import logo from "/Logo.png";
 import axiosInstance from "../api/axiosInstance";
+import { ToastContainer, toast, Bounce } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 const Authentication = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -23,22 +25,46 @@ const Authentication = () => {
       password: password,
     }
 
+    
     const response = await axiosInstance.post("/accessra_microservice/auth/sign-in", payload, {
       headers: {
         "Content-Type": "application/json",
       },
     });
-
-    if(response.status === 201) {
+    console.log(response);
+    if(response?.status === 201) {
       const token = response?.data?.token;
       localStorage.setItem("jsonwebtoken", token);
-      window.location.href = "/dashboard";
+      toast.success('Login Successful!')
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 3000);
+      
+    }else if(response?.status === 401) {
+      toast.error('Invalid Credentials!')
+    }else{
+      toast.error('Something went wrong! Try again later!')
     }
+
     
   }
 
   return (
     <div className="flex h-screen">
+      <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick={false}
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+          transition={Bounce}
+        />
+
       {/* Left Section */}
       <div className="w-1/3 bg-gray-100 flex flex-col justify-center items-center">
         <div className="w-[60%]">

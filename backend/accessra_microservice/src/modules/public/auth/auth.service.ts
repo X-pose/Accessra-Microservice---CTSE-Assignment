@@ -25,17 +25,15 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     const { email, password, firstName, lastName, tenantName } = registerDto;
-    
+
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
       where: { email },
     });
-   
     if (existingUser) {
       throw new UnauthorizedException('User already exists');
     }
 
-    
     // Check if tenant name is already taken
     const existingTenant = await this.tenantRepository.findOne({
       where: { name: tenantName },
