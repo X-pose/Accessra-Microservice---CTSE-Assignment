@@ -10,7 +10,22 @@ describe('AccessRA Microservice (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider('ConfigService')
+      .useValue({
+        get: (key: string) => {
+          const mockEnv = {
+            DB_HOST: 'localhost',
+            DB_PORT: '5432',
+            DB_USER: 'test',
+            DB_PASSWORD: 'test',
+            JWT_SECRET: 'test-secret',
+            // Add any other env keys your app expects
+          };
+          return mockEnv[key];
+        },
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     // Configure the app with the same settings as in main.ts
