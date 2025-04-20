@@ -7,29 +7,30 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    try {
-      const token = localStorage.getItem("jsonwebtoken");
-      const payload = jwtDecode(token);
-      const tenantId = payload?.tenantId;
+    const token = localStorage.getItem("jsonwebtoken");
 
-      config.headers = {
-        'x-tenant-id': tenantId,
-      };
-      
-      if (token) {
-        config.headers["Authorization"] = `Bearer ${token}`;
+    if (token && token.split('.').length === 3) {
+      try {
+        const payload = jwtDecode(token);
+        const tenantId = payload?.tenantId;
+
+        config.headers = {
+          ...config.headers,
+          'x-tenant-id': tenantId,
+          'Authorization': `Bearer ${token}`,
+        };
+      } catch (err) {
+        console.error("Failed to decode JWT:", err.message);
       }
-      return config;
-    } catch (error) {
-      console.error("Error parsing token:", error);
-      return config; // Proceed without the token if there's an error
+    } else {
+      console.warn("Token is missing or malformed.");
     }
 
+    return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
+
 
 
 export default axiosInstance;

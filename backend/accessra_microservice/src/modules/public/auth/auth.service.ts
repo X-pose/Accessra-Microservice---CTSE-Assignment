@@ -73,6 +73,10 @@ export class AuthService {
     };
   }
 
+  healthCheck(): string {
+    return 'Hello World!';
+  }
+
   async addRoleToAdminUser(schema: string, userId: string) {
     const dataSource = await getTenantDataSource(schema);
     const user = await this.userRepository.findOne({

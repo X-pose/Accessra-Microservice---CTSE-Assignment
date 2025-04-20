@@ -13,8 +13,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { TenantService } from '../tenant/tenant.service';
 import { TenantId } from '../../tenancy/decorators/tenant-id.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UseGuards } from '@nestjs/common/decorators/core/use-guards.decorator';
 
 @Controller('users')
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(
     private readonly userService: UserService,
