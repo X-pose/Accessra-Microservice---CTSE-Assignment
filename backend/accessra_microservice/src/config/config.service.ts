@@ -8,16 +8,22 @@ export class ConfigService {
   private readonly envConfig: { [key: string]: string };
 
   constructor() {
-    // Load environment variables from .env file
-    const envPath = path.resolve(process.cwd(), '.env');
-    this.envConfig = dotenv.parse(fs.readFileSync(envPath));
+    // Initialize with process.env
+    this.envConfig = { ...process.env };
     
-    // Log loaded environment variables
-    console.log('ConfigService Environment Variables:');
+    // Try to load from .env file if it exists
+    const envPath = path.resolve(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const envFileConfig = dotenv.parse(fs.readFileSync(envPath));
+      // Merge with priority to .env file values
+      this.envConfig = { ...this.envConfig, ...envFileConfig };
+    }
+    
+    // Log non-sensitive environment variables
+    console.log('ConfigService initialized');
     console.log('PROD_DB_HOST:', this.envConfig.PROD_DB_HOST);
     console.log('PROD_DB_PORT:', this.envConfig.PROD_DB_PORT);
-    console.log('PROD_DB_USERNAME:', this.envConfig.PROD_DB_USERNAME);
-    console.log('PROD_DB_NAME:', this.envConfig.PROD_DB_NAME);
+    // Don't log sensitive information like usernames
   }
 
   get(key: string): string {
@@ -34,4 +40,4 @@ export class ConfigService {
       jwt_secret: this.get('JWT_SECRET') || 'secret'
     };
   }
-} 
+}
