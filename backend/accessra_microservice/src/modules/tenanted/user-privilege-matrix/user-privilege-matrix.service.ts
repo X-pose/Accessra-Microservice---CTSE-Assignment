@@ -25,7 +25,7 @@ export class UserPrivilegeMatrixService {
       create,
       edit,
       delete: del,
-      update,
+      view,
     } = createUserPrivilegeMatrixDto;
 
     const dataSource = await getTenantDataSource(schema);
@@ -49,7 +49,7 @@ export class UserPrivilegeMatrixService {
       create,
       edit,
       delete: del,
-      update,
+      view,
     });
 
     return await userPrivilegeRepository.save(userPrivilegeMatrix);
@@ -142,4 +142,20 @@ export class UserPrivilegeMatrixService {
 
     await userPrivilegeRepository.remove(userPrivilegeMatrix);
   }
+
+    /**
+   * Delete a all privileges in matrix.
+   */
+    async removeAll(
+      
+      schema: string,
+    ): Promise<void> {
+      const dataSource = await getTenantDataSource(schema);
+      const userPrivilegeRepository =
+        dataSource.getRepository(UserPrivilegeMatrix);
+  
+      const userPrivilegeMatrix = await this.findAll(schema);
+  
+      await userPrivilegeRepository.remove(userPrivilegeMatrix);
+    }
 }

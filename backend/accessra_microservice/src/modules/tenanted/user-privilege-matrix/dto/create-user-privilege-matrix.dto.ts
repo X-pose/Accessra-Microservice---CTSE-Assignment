@@ -5,7 +5,7 @@ export class CreateUserPrivilegeMatrixDto {
   create: boolean;
   edit: boolean;
   delete: boolean;
-  update: boolean;
+  view: boolean;
 }
 
 // update-user-privilege-matrix.dto.ts
@@ -13,5 +13,5 @@ export class UpdateUserPrivilegeMatrixDto {
   create?: boolean;
   edit?: boolean;
   delete?: boolean;
-  update?: boolean;
+  view?: boolean;
 }

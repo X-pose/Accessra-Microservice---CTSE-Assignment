@@ -5,6 +5,7 @@ import {
   Body,
   Param,
   Put,
+  Patch,
   Delete,
   HttpCode,
   HttpStatus,
@@ -64,7 +65,7 @@ export class UserPrivilegeMatrixController {
     );
   }
 
-  @Put(':roleId/:resourceId')
+  @Patch(':roleId/:resourceId')
   async update(
     @Param('roleId') roleId: string,
     @Param('resourceId') resourceId: string,
@@ -91,6 +92,20 @@ export class UserPrivilegeMatrixController {
     return this.userPrivilegeMatrixService.remove(
       roleId,
       resourceId,
+      schemaName,
+    );
+  }
+
+  @Delete()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeAll(
+    @Param('roleId') roleId: string,
+    @Param('resourceId') resourceId: string,
+    @TenantId() tenantId: string,
+  ): Promise<void> {
+    const schemaName = await this.getSchemaNameOrThrow(tenantId);
+    return this.userPrivilegeMatrixService.removeAll(
+    
       schemaName,
     );
   }

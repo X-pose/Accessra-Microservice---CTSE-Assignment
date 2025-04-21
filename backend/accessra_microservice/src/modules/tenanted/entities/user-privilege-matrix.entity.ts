@@ -29,5 +29,5 @@ export class UserPrivilegeMatrix extends AbstractEntity {
   delete: boolean;
 
   @Column({ type: 'boolean', default: false })
-  update: boolean;
+  view: boolean;
 }

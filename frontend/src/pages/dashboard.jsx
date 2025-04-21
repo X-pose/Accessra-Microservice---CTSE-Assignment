@@ -69,13 +69,14 @@ import { ToastContainer, toast, Bounce } from 'react-toastify'
 
 const Dashboard = () => {
     const [activeMenu, setActiveMenu] = useState("User Management");
-    const [selectedRole, setSelectedRole] = useState("Administrator");
+    const [selectedRole, setSelectedRole] = useState();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isNewUserDrawer, setIsNewUSerDrawer] = useState(false);
     const [isNewResourceDrawer, setIsNewResourceDrawer] = useState(false);
     const [userRoles, setUserRoles] = useState([])
     const [users, setUsers] = useState([])
     const [newRole, setNewRole] = useState()
+    const [initiateCount, setInitiateCount] = useState(0)
     const [newResource, setNewResource] = useState({
         name: "",
         description: "",
@@ -93,24 +94,8 @@ const Dashboard = () => {
     })
     // Add this state at the top of your component
     const [editingId, setEditingId] = useState(null);
-
-
     const [userName, setUserName] = useState("falcon");
-
-    const [privileges, setPrivileges] = useState({
-        roles: ["Administrator", "Reader", "Contributor"],
-        modules: [
-            "Product page",
-            "Admin page",
-            "User Management page",
-            "Core Data page",
-            "Core Data Category",
-            "Templates",
-            "Privilege Matrix",
-            "General",
-        ],
-        permissions: {}, // This will be initialized in useEffect
-    });
+    const [privilegeMatrix, setPrivileges] = useState({});
 
     // Initialize permissions structure
     useEffect(() => {
@@ -118,37 +103,30 @@ const Dashboard = () => {
         getUserRoles()
         getAllUsers();
         getAllResources()
-        // Set default permissions based on role
-        privileges.roles.forEach((role) => {
-            resourceList.forEach((module) => {
-                // Default permissions - Administrator gets all permissions by default
-                const isAdmin = role === "Administrator";
-                const isReader = role === "Reader";
-
-                initialPermissions[`${role}-${module}`] = {
-                    view: isAdmin || isReader, // Reader can view
-                    create: isAdmin,  // Only admin can create
-                    edit: isAdmin,    // Only admin can edit
-                    delete: isAdmin,  // Only admin can delete
-                };
-            });
-        });
-
-        setPrivileges((prev) => ({ ...prev, permissions: initialPermissions }));
+        getUserPrivileges()
+        
+        
     }, []);
 
+    useEffect(() => {
+      setSelectedRole(userRoles[0])
+      setTimeout(() => {
+        initiatePrivilegeMatrix()
+    }, 1000)
+    }, [userRoles]);
+
     const togglePermission = (role, module, permission) => {
-        setPrivileges((prev) => ({
-            ...prev,
-            permissions: {
-                ...prev.permissions,
-                [`${role}-${module}`]: {
-                    ...prev.permissions[`${role}-${module}`],
-                    [permission]: !prev.permissions[`${role}-${module}`]?.[permission],
-                },
-            },
-        }));
-        console.log(privileges.permissions);
+        // setPrivileges((prev) => ({
+        //     ...prev,
+        //     permissions: {
+        //         ...prev.permissions,
+        //         [`${role}-${module}`]: {
+        //             ...prev.permissions[`${role}-${module}`],
+        //             [permission]: !prev.permissions[`${role}-${module}`]?.[permission],
+        //         },
+        //     },
+        // }));
+        // console.log(privileges.permissions);
     };
 
     const addNewRole = async (e) => {
@@ -207,6 +185,7 @@ const Dashboard = () => {
             console.log("Error fetching user roles:", response?.status);
         }
     }
+
     const removeUser = async (index) => {
         // Logic to remove user from the list
         const userId = users[index]?.id;
@@ -312,7 +291,7 @@ const Dashboard = () => {
     };
 
     const getUserPrivileges = async () => {
-        const response = await axiosInstance.get('/accessra_microservice/user-privileges-matrix')
+        const response = await axiosInstance.get('/accessra_microservice/user-privilege-matrix')
         if (response?.status === 200) {
             setPrivileges(response?.data)
         } else {
@@ -321,8 +300,112 @@ const Dashboard = () => {
 
     }
 
+    const initiatePrivilegeMatrix = async () => {
+        if(initiateCount > 0) return
+        if (userRoles?.length > 0 && resourceList?.length > 0) {
+            for (let i = 0; i < userRoles.length; i++) {
+                for (let j = 0; j < resourceList.length; j++) {
+                    const privilege = privilegeMatrix.find(p => 
+                        p.roleId ===userRoles[i]?.id && 
+                        p.resourceId === resourceList[j]?.id
+                    );
+                    
+                    // If no privilege found, create a new one
+                    if (!privilege){
+                        await createPriviledgeMatrix(userRoles[i]?.id, resourceList[j]?.id)  
+                    } 
+                    
+                }
+            }
+            setInitiateCount(1)
+        } else {
+            console.log("User roles or resources not available to create privilege matrix.");
+        }
+    }
+    const createPriviledgeMatrix = async ( roleId, resourceId) => {
+       
+        
+        const payload = {
+            roleId: roleId,
+            resourceId: resourceId,
+            create: false,
+            edit: false,
+            delete: false,
+            view: false
+        }
+
+        console.log('Creating priviledge matrix:', payload)
+        const response = await axiosInstance.post('/accessra_microservice/user-privilege-matrix', payload, {
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+
+        if (response?.status === 201) {
+            await getUserPrivileges()
+            
+        }else{
+            console.log("Error creating privilege matrix:", response?.status);
+        }
+    }
+
+    const checkPermission = (roleId, resourceId, permission) => {
+        try {
+            
+            // Find the privilege in the matrix that matches both roleId and resourceId
+            const privilege = privilegeMatrix.find(p => 
+                p.roleId === roleId && 
+                p.resourceId === resourceId
+            );
+            
+           
+            // If no privilege found, return false
+            if (!privilege){
+                
+                
+                return false;
+            } 
+    
+            // Return the value of the specific permission (create, edit, delete, view)
+            return privilege[permission] || false;
+    
+        } catch (error) {
+            console.error("Error checking permission:", error);
+            return false;
+        }
+    };
+
+    const updatePermissoins = async(roleId, resourceId,permission) => {
+        const privilege = privilegeMatrix.find(p => 
+            p.roleId === roleId && 
+            p.resourceId === resourceId
+        );
+
+        if(!privilege) {
+            return false
+        }
+
+        const payload = {
+            [permission]: !privilege[permission]
+        }
+
+        const response = await axiosInstance.patch(`/accessra_microservice/user-privilege-matrix/${roleId}/${resourceId}`, payload, {  
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+        if (response?.status === 200) {
+            await getUserPrivileges()
+            toast.success('Privilege Updated Successfully!')
+            return privilege[permission]
+        } else {
+            toast.error('Something went wrong! Try again later!')
+        }
+    }
+
     return (
         <div className="flex h-screen bg-gray-100">
+            
             <ToastContainer
                 position="top-right"
                 autoClose={3000}
@@ -336,6 +419,7 @@ const Dashboard = () => {
                 theme="light"
                 transition={Bounce}
             />
+            
             {/* Left Sidebar */}
             <div className="w-1/6 bg-white shadow-md">
                 <div className="p-4 text-xl font-bold text-blue-900">
@@ -520,7 +604,8 @@ const Dashboard = () => {
                 )}
 
 
-                {activeMenu === "Privilege Matrix" && (
+            {activeMenu === "Privilege Matrix" && (privilegeMatrix && Array.isArray(privilegeMatrix) && privilegeMatrix.length >= 0 ? (
+    
                     <div className="w-4/5">
                         <div className="flex w-full justify-between mb-2">
                             <div>
@@ -543,11 +628,11 @@ const Dashboard = () => {
                                     {userRoles.map((role, index) => (
                                         <li
                                             key={index}
-                                            className={`p-2 border-b border-gray-300 last:border-b-0  cursor-pointer ${selectedRole === role?.name
+                                            className={`p-2 border-b border-gray-300 last:border-b-0  cursor-pointer ${selectedRole?.name === role?.name
                                                 ? "bg-[var(--accent)] text-white font-medium"
                                                 : "text-gray-700 hover:bg-gray-50"
                                                 }`}
-                                            onClick={() => setSelectedRole(role?.name)}
+                                            onClick={() => setSelectedRole(role)}
 
                                         >
                                             {role?.name}
@@ -580,16 +665,11 @@ const Dashboard = () => {
                                                                 type="checkbox"
                                                                 className="bg-[var(--accent)] cursor-pointer"
                                                                 checked={
-                                                                    privileges.permissions[`${selectedRole}-${module}`]?.[
-                                                                    permission
-                                                                    ] || false
+                                                                    checkPermission(selectedRole?.id,module?.id, permission) 
+                                    
                                                                 }
                                                                 onChange={() =>
-                                                                    togglePermission(
-                                                                        selectedRole,
-                                                                        module,
-                                                                        permission
-                                                                    )
+                                                                    updatePermissoins(selectedRole?.id,module?.id, permission)
                                                                 }
                                                             />
                                                         </td>
@@ -614,6 +694,15 @@ const Dashboard = () => {
                             </button>
                         </div>
                     </div>
+                ) : (
+                    
+                    <div className="w-full h-full flex justify-center items-center">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent)] mx-auto"></div>
+                            <p className="mt-4 text-gray-600">Loading privileges...</p>
+                        </div>
+                    </div>
+                )
                 )}
             </div>
 
