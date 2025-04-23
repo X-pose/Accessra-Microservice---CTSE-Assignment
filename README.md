@@ -14,7 +14,7 @@
 
 - ⚙️ **Modular NestJS Architecture**  
   Cleanly separated modules for extensibility and testability.
-  
+
 - 🗃️ **TypeORM for ORM**  
   Dynamic tenant-aware data source creation and schema handling.
 
@@ -26,5 +26,16 @@
 
 - ✅ **CI/CD via GitHub Actions**  
   Automated testing and deployment workflows using GitHub Actions.
+
+---
+
+## 🧱 Tech Stack
+
+- **Framework**: [NestJS](https://nestjs.com/)
+- **ORM**: [TypeORM](https://typeorm.io/)
+- **Database**: PostgreSQL
+- **Containerization**: Docker
+- **Cloud**: AWS ECS (Fargate or EC2)
+- **CI/CD**: GitHub Actions
 
 ---
