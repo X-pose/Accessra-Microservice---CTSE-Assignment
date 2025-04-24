@@ -34,6 +34,7 @@ export class UserService {
         id: createUserDto.roleId,
       },
     });
+    console.log('role: ', role);
     if (!role) {
       throw new BadRequestException('User Role is invalid');
     }

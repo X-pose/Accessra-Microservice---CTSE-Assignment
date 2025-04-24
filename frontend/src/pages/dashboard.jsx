@@ -74,7 +74,7 @@ const Dashboard = () => {
     const [isNewUserDrawer, setIsNewUSerDrawer] = useState(false);
     const [isNewResourceDrawer, setIsNewResourceDrawer] = useState(false);
     const [userRoles, setUserRoles] = useState([])
-    const [users, setUsers] = useState([])
+    const [users, setUsers] = useState(null)
     const [newRole, setNewRole] = useState()
     const [initiateCount, setInitiateCount] = useState(0)
     const [newResource, setNewResource] = useState({
@@ -104,15 +104,15 @@ const Dashboard = () => {
         getAllUsers();
         getAllResources()
         getUserPrivileges()
-        
-        
+
+
     }, []);
 
     useEffect(() => {
-      setSelectedRole(userRoles[0])
-      setTimeout(() => {
-        initiatePrivilegeMatrix()
-    }, 1000)
+        setSelectedRole(userRoles[0])
+        setTimeout(() => {
+            initiatePrivilegeMatrix()
+        }, 1000)
     }, [userRoles]);
 
     const togglePermission = (role, module, permission) => {
@@ -164,7 +164,7 @@ const Dashboard = () => {
         })
         console.log(response)
         if (response?.status === 201) {
-            
+
             await getAllResources()
             toast.success('Resource Created Successfully!')
             setNewResource('')
@@ -172,7 +172,7 @@ const Dashboard = () => {
         }
     }
 
-    const getAllResources = async() => {
+    const getAllResources = async () => {
         const response = await axiosInstance.get('/accessra_microservice/resources', {
             headers: {
                 "Content-Type": "application/json"
@@ -214,8 +214,9 @@ const Dashboard = () => {
             lastName: users[index]?.lastName,
             email: users[index]?.email,
             roleId: users[index]?.roleId,
-
         }
+
+        console.log("Update payload: ", payload)
 
         const response = await axiosInstance.patch(`/accessra_microservice/users/${userId}`, payload, {
             headers: {
@@ -301,20 +302,20 @@ const Dashboard = () => {
     }
 
     const initiatePrivilegeMatrix = async () => {
-        if(initiateCount > 0) return
+        if (initiateCount > 0) return
         if (userRoles?.length > 0 && resourceList?.length > 0) {
             for (let i = 0; i < userRoles.length; i++) {
                 for (let j = 0; j < resourceList.length; j++) {
-                    const privilege = privilegeMatrix.find(p => 
-                        p.roleId ===userRoles[i]?.id && 
+                    const privilege = privilegeMatrix.find(p =>
+                        p.roleId === userRoles[i]?.id &&
                         p.resourceId === resourceList[j]?.id
                     );
-                    
+
                     // If no privilege found, create a new one
-                    if (!privilege){
-                        await createPriviledgeMatrix(userRoles[i]?.id, resourceList[j]?.id)  
-                    } 
-                    
+                    if (!privilege) {
+                        await createPriviledgeMatrix(userRoles[i]?.id, resourceList[j]?.id)
+                    }
+
                 }
             }
             setInitiateCount(1)
@@ -322,9 +323,9 @@ const Dashboard = () => {
             console.log("User roles or resources not available to create privilege matrix.");
         }
     }
-    const createPriviledgeMatrix = async ( roleId, resourceId) => {
-       
-        
+    const createPriviledgeMatrix = async (roleId, resourceId) => {
+
+
         const payload = {
             roleId: roleId,
             resourceId: resourceId,
@@ -343,45 +344,45 @@ const Dashboard = () => {
 
         if (response?.status === 201) {
             await getUserPrivileges()
-            
-        }else{
+
+        } else {
             console.log("Error creating privilege matrix:", response?.status);
         }
     }
 
     const checkPermission = (roleId, resourceId, permission) => {
         try {
-            
+
             // Find the privilege in the matrix that matches both roleId and resourceId
-            const privilege = privilegeMatrix.find(p => 
-                p.roleId === roleId && 
+            const privilege = privilegeMatrix.find(p =>
+                p.roleId === roleId &&
                 p.resourceId === resourceId
             );
-            
-           
+
+
             // If no privilege found, return false
-            if (!privilege){
-                
-                
+            if (!privilege) {
+
+
                 return false;
-            } 
-    
+            }
+
             // Return the value of the specific permission (create, edit, delete, view)
             return privilege[permission] || false;
-    
+
         } catch (error) {
             console.error("Error checking permission:", error);
             return false;
         }
     };
 
-    const updatePermissoins = async(roleId, resourceId,permission) => {
-        const privilege = privilegeMatrix.find(p => 
-            p.roleId === roleId && 
+    const updatePermissoins = async (roleId, resourceId, permission) => {
+        const privilege = privilegeMatrix.find(p =>
+            p.roleId === roleId &&
             p.resourceId === resourceId
         );
 
-        if(!privilege) {
+        if (!privilege) {
             return false
         }
 
@@ -389,7 +390,7 @@ const Dashboard = () => {
             [permission]: !privilege[permission]
         }
 
-        const response = await axiosInstance.patch(`/accessra_microservice/user-privilege-matrix/${roleId}/${resourceId}`, payload, {  
+        const response = await axiosInstance.patch(`/accessra_microservice/user-privilege-matrix/${roleId}/${resourceId}`, payload, {
             headers: {
                 "Content-Type": "application/json"
             }
@@ -403,9 +404,14 @@ const Dashboard = () => {
         }
     }
 
+    const returnRoleName = (roleId) => {
+        const role = userRoles.find((role) => role?.id === roleId);
+        return role ? role?.name : "Not Assigned yet";
+    }
+
     return (
         <div className="flex h-screen bg-gray-100">
-            
+
             <ToastContainer
                 position="top-right"
                 autoClose={3000}
@@ -419,7 +425,7 @@ const Dashboard = () => {
                 theme="light"
                 transition={Bounce}
             />
-            
+
             {/* Left Sidebar */}
             <div className="w-1/6 bg-white shadow-md">
                 <div className="p-4 text-xl font-bold text-blue-900">
@@ -495,117 +501,128 @@ const Dashboard = () => {
                             </div>
                         </div>
                         <div className="bg-white p-4 rounded-lg shadow-md">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="bg-blue-100 border-b border-gray-300">
-                                        <th className="text-left p-2  border-gray-300">First Name</th>
-                                        <th className="text-left p-2 border-l border-gray-300">Last Name</th>
-                                        <th className="text-left p-2 border-l border-gray-300">Email</th>
-                                        <th className="text-left p-2 border-l border-gray-300">Role</th>
-                                        {/* <th className="text-left p-2 border-l border-gray-300">Status</th> */}
-                                        <th className="text-left p-2 border-l border-gray-300">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {/* Sample Data */}
-                                    {users.map((user, index) => (
-                                        <tr key={index}>
-                                            <td className="p-2 border-b text-gray-500 border-gray-300">
-                                                {editingId === index ? (
-                                                    <input
-                                                        type="text"
-                                                        defaultValue={user?.firstName}
-                                                        onChange={(e) => setUsers((prev) => {
-                                                            const users = [...prev]; users[index].firstName = e.target.value;
-                                                            return users
-                                                        })}
-                                                        className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                                    />
-                                                ) : (
-                                                    user?.firstName
-                                                )}
-                                            </td>
-                                            <td className="p-2 border-b border-l text-gray-500 border-gray-300">
-                                                {editingId === index ? (
-                                                    <input
-                                                        type="text"
-                                                        onChange={(e) => setUsers((prev) => {
-                                                            const users = [...prev]; users[index].lastName = e.target.value;
-                                                            return users
-                                                        })}
-                                                        defaultValue={user?.lastName}
-                                                        className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                                    />
-                                                ) : (
-                                                    user?.lastName
-                                                )}
-                                            </td>
-                                            <td className="p-2 border-b border-l border-gray-300 text-gray-500">
-                                                {editingId === index ? (
-                                                    <input
-                                                        type="email"
-                                                        onChange={(e) => setUsers((prev) => {
-                                                            const users = [...prev]; users[index].email = e.target.value;
-                                                            return users
-                                                        })}
-                                                        defaultValue={user?.email.toLowerCase()}
-                                                        className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                                    />
-                                                ) : (
-                                                    user?.email.toLowerCase()
-                                                )}
-                                            </td>
-                                            <td className="p-2 border-b border-l border-gray-300 text-gray-500">
-                                                {editingId === index ? (
-                                                    <select
-                                                        defaultValue={user?.role}
-                                                        // onChange={(e) => setUsers((prev) => {
-                                                        //     const users = [...prev]; users[index]?.role = e.target.value; 
-                                                        //     return users
-                                                        // })}
-                                                        className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                                    >
-                                                        {userRoles?.map((roleEntity, idx) => (
-                                                            <option key={idx} value={roleEntity?.id}>
-                                                                {roleEntity?.name}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                ) : (
-                                                    user?.role
-                                                )}
-                                            </td>
-                                            <td className="p-2 border-b border-l border-gray-300 text-gray-500">
-                                                <div className="flex justify-center">
-                                                    {editingId === index ? (
-                                                        <>
-                                                            <i className="fa-solid fa-check mr-[20px] text-green-500 hover:text-green-600 cursor-pointer"
-                                                                onClick={() => updateUser(index)}></i>
-                                                            <i className="fa-solid fa-xmark text-red-500 hover:text-red-600 cursor-pointer"
-                                                                onClick={() => removeUser(index)}></i>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <i className="fa-solid fa-pen-to-square mr-[20px] text-gray-300 hover:text-[var(--accent)] cursor-pointer"
-                                                                onClick={() => toggleEdit(index)}></i>
-                                                            <i onClick={() => removeUser(index)}
-                                                                className="fa-solid fa-trash text-gray-300 hover:text-red-400 cursor-pointer"></i>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </td>
+                            {users?.length >= 0 ? (
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-blue-100 border-b border-gray-300">
+                                            <th className="text-left p-2  border-gray-300">First Name</th>
+                                            <th className="text-left p-2 border-l border-gray-300">Last Name</th>
+                                            <th className="text-left p-2 border-l border-gray-300">Email</th>
+                                            <th className="text-left p-2 border-l border-gray-300">Role</th>
+                                            {/* <th className="text-left p-2 border-l border-gray-300">Status</th> */}
+                                            <th className="text-left p-2 border-l border-gray-300">Actions</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {/* Sample Data */}
+                                        {users.map((user, index) => (
+                                            <tr key={index}>
+                                                <td className="p-2 border-b text-gray-500 border-gray-300">
+                                                    {editingId === index ? (
+                                                        <input
+                                                            type="text"
+                                                            defaultValue={user?.firstName}
+                                                            onChange={(e) => setUsers((prev) => {
+                                                                const users = [...prev]; users[index].firstName = e.target.value;
+                                                                return users
+                                                            })}
+                                                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                                        />
+                                                    ) : (
+                                                        user?.firstName
+                                                    )}
+                                                </td>
+                                                <td className="p-2 border-b border-l text-gray-500 border-gray-300">
+                                                    {editingId === index ? (
+                                                        <input
+                                                            type="text"
+                                                            onChange={(e) => setUsers((prev) => {
+                                                                const users = [...prev]; users[index].lastName = e.target.value;
+                                                                return users
+                                                            })}
+                                                            defaultValue={user?.lastName}
+                                                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                                        />
+                                                    ) : (
+                                                        user?.lastName
+                                                    )}
+                                                </td>
+                                                <td className="p-2 border-b border-l border-gray-300 text-gray-500">
+                                                    {editingId === index ? (
+                                                        <input
+                                                            type="email"
+                                                            onChange={(e) => setUsers((prev) => {
+                                                                const users = [...prev]; users[index].email = e.target.value;
+                                                                return users
+                                                            })}
+                                                            defaultValue={user?.email.toLowerCase()}
+                                                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                                        />
+                                                    ) : (
+                                                        user?.email.toLowerCase()
+                                                    )}
+                                                </td>
+                                                <td className="p-2 border-b border-l border-gray-300 text-gray-500">
+                                                    {editingId === index ? (
+                                                        <select
+                                                            defaultValue={returnRoleName(user?.roleId)}
+                                                            onChange={(e) => setUsers((prev) => {
+                                                                const users = [...prev]; users[index].roleId = e.target.value; 
+                                                                
+                                                                return users
+                                                            })}
+                                                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                                        >
+                                                            {userRoles?.map((roleEntity, idx) => (
+                                                                <option key={idx} value={roleEntity?.id}>
+                                                                    {roleEntity?.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    ) : (
+                                                        returnRoleName(user?.roleId)
+                                                    )}
+                                                </td>
+                                                <td className="p-2 border-b border-l border-gray-300 text-gray-500">
+                                                    <div className="flex justify-center">
+                                                        {editingId === index ? (
+                                                            <>
+                                                                <i className="fa-solid fa-check mr-[20px] text-green-500 hover:text-green-600 cursor-pointer"
+                                                                    onClick={() => updateUser(index)}></i>
+                                                                <i className="fa-solid fa-xmark text-red-500 hover:text-red-600 cursor-pointer"
+                                                                    onClick={() => setEditingId(null)}></i>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <i className="fa-solid fa-pen-to-square mr-[20px] text-gray-300 hover:text-[var(--accent)] cursor-pointer"
+                                                                    onClick={() => toggleEdit(index)}></i>
+                                                                <i onClick={() => removeUser(index)}
+                                                                    className="fa-solid fa-trash text-gray-300 hover:text-red-400 cursor-pointer"></i>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <div className="w-full h-full flex justify-center items-center">
+                                    <div className="text-center">
+                                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent)] mx-auto"></div>
+                                        <p className="mt-4 text-gray-600">Loading Users...</p>
+                                    </div>
+                                </div>
+                            )}
+
                         </div>
 
                     </div>
                 )}
 
 
-            {activeMenu === "Privilege Matrix" && (privilegeMatrix && Array.isArray(privilegeMatrix) && privilegeMatrix.length >= 0 ? (
-    
+                {activeMenu === "Privilege Matrix" && (privilegeMatrix && Array.isArray(privilegeMatrix) && privilegeMatrix.length >= 0 ? (
+
                     <div className="w-4/5">
                         <div className="flex w-full justify-between mb-2">
                             <div>
@@ -665,11 +682,11 @@ const Dashboard = () => {
                                                                 type="checkbox"
                                                                 className="bg-[var(--accent)] cursor-pointer"
                                                                 checked={
-                                                                    checkPermission(selectedRole?.id,module?.id, permission) 
-                                    
+                                                                    checkPermission(selectedRole?.id, module?.id, permission)
+
                                                                 }
                                                                 onChange={() =>
-                                                                    updatePermissoins(selectedRole?.id,module?.id, permission)
+                                                                    updatePermissoins(selectedRole?.id, module?.id, permission)
                                                                 }
                                                             />
                                                         </td>
@@ -689,13 +706,16 @@ const Dashboard = () => {
                                     Create New User Role
                                 </button>
                             </div>
-                            <button className="bg-[var(--accent)] cursor-pointer text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                                Save Changes
-                            </button>
+                            <div>
+                                {/* <button className="bg-[var(--accent)] cursor-pointer text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                    Save Changes
+                                </button> */}
+                            </div>
+
                         </div>
                     </div>
                 ) : (
-                    
+
                     <div className="w-full h-full flex justify-center items-center">
                         <div className="text-center">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent)] mx-auto"></div>
@@ -949,7 +969,7 @@ const Dashboard = () => {
                                 <input
                                     type="text"
                                     id="Resource"
-                                    onChange={(e) => setNewResource({ ...newResource, code: e.target.value })}  
+                                    onChange={(e) => setNewResource({ ...newResource, code: e.target.value })}
                                     value={newResource?.code}
                                     placeholder="Enter Resource Name"
                                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"

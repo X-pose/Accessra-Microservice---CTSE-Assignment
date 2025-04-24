@@ -19,6 +19,9 @@ export class User extends AbstractEntity {
   @Column({ name: 'generated_token', nullable: true })
   generatedToken: string;
 
+  @Column({ name: 'role_id', nullable: true })
+  roleId: string;
+
   @ManyToOne(() => Tenant)
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
