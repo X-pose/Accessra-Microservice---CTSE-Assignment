@@ -10,3 +10,5 @@
   Each tenant gets its own isolated PostgreSQL schema, enabling secure and scalable SaaS environments.
 - 🔐 **Authentication & Authorization**  
   JWT-based authentication and role-based access control (RBAC).
+- ⚙️ **Modular NestJS Architecture**  
+  Cleanly separated modules for extensibility and testability.
