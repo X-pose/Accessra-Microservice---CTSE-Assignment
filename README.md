@@ -46,3 +46,12 @@ Accessra follows a **schema-based multi-tenant** architecture:
 - Each tenant's data is stored in a **separate PostgreSQL schema**, ensuring complete isolation.
 - A **central database schema** manages tenant metadata, authentication credentials, and user assignments.
 - Dynamic schema creation and connection logic are handled at runtime using custom TypeORM strategies.
+
+This approach provides:
+- ✅ Strong data isolation
+- 📈 Easy scaling with minimal changes
+- 🔄 Centralized user and tenant management
+
+---
+
+![image](https://github.com/user-attachments/assets/2cf37a28-6d16-4a19-b8aa-330cf239f99c)
