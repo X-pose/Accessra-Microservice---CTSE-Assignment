@@ -43,3 +43,4 @@
 ## 🏗️ Multi-Tenancy Architecture
 
 Accessra follows a **schema-based multi-tenant** architecture:
+- Each tenant's data is stored in a **separate PostgreSQL schema**, ensuring complete isolation.
