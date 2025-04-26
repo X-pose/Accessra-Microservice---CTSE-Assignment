@@ -39,3 +39,7 @@
 - **CI/CD**: GitHub Actions
 
 ---
+
+## 🏗️ Multi-Tenancy Architecture
+
+Accessra follows a **schema-based multi-tenant** architecture:
