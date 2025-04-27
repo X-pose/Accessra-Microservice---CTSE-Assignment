@@ -145,7 +145,7 @@ jobs:
       - name: Build and push versioned and latest Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./backend
+          context: ./backend/accessra_microservice
           push: true
           tags: |
             chillbroh98/accessra:${{ steps.set_version.outputs.version }}
