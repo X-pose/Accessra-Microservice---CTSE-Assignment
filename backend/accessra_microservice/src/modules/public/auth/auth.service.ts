@@ -95,6 +95,7 @@ export class AuthService {
     };
     await dataSource.getRepository(UserRole).save(userRole);
   }
+  
   async signIn(signInDto: SignInDto) {
     const { email, password } = signInDto;
 
