@@ -25,10 +25,10 @@ jobs:
         working-directory: backend/accessra_microservice
         run: npm ci
 
-      - name: Create test env file
+      - name: Create env file
         working-directory: backend/accessra_microservice
         run: |
-          echo "PROD_DB_HOST=${{ secrets.PROD_DB_HOST }}" > .env
+          echo "PROD_DB_HOST=${{ secrets.PROD_DB_HOST }}" >> .env
           echo "PROD_DB_PORT=${{ secrets.PROD_DB_PORT }}" >> .env
           echo "PROD_DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}" >> .env
           echo "PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> .env
@@ -62,34 +62,18 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
 
-      - name: ⚙️ Setup Node.js for Microservice
+      - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: backend/accessra_microservice/package-lock.json
+          cache-dependency-path: |
+            backend/accessra_microservice/package-lock.json
+            frontend/package-lock.json
 
-      - name: Install Microservice dependencies
+      - name: Install backend dependencies
         working-directory: backend/accessra_microservice
         run: npm ci
-
-      - name: SonarCloud Scan (Microservice)
-        uses: SonarSource/sonarcloud-github-action@v2
-        with:
-          projectBaseDir: backend/accessra_microservice
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
-          SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
-
-      # Build frontend regardless of where changes were detected
-      - name: ⚙️ Setup Node.js for Frontend
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install Frontend dependencies and build
         working-directory: frontend
@@ -97,30 +81,57 @@ jobs:
           npm ci
           npm run build
 
-      # Safely create .env file without logging sensitive values
+      - name: SonarCloud Scan (Microservice)
+        uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          projectBaseDir: backend/accessra_microservice
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
+          SONAR_PROJECT_KEY: X-pose_Accessra-Microservice---CTSE-Assignment
+          SONAR_ORGANIZATION: x-pose
+
       - name: 🔒 Create .env file for Docker build
         run: |
-          mkdir -p backend
-          echo "Creating .env file with secrets (values hidden)"
-          echo "PROD_DB_HOST=\"\$PROD_DB_HOST\"" > backend/.env
-          echo "PROD_DB_PORT=\"\$PROD_DB_PORT\"" >> backend/.env
-          echo "PROD_DB_USERNAME=\"\$PROD_DB_USERNAME\"" >> backend/.env
-          echo "PROD_DB_PASSWORD=\"\$PROD_DB_PASSWORD\"" >> backend/.env
-          echo "PROD_DB_NAME=\"\$PROD_DB_NAME\"" >> backend/.env
-          echo "JWT_SECRET=\"\$JWT_SECRET\"" >> backend/.env
-          
-          # Replace placeholders with actual values
-          sed -i "s/\"\\\$PROD_DB_HOST\"/\"${{ secrets.PROD_DB_HOST }}\"/" backend/.env
-          sed -i "s/\"\\\$PROD_DB_PORT\"/\"${{ secrets.PROD_DB_PORT }}\"/" backend/.env
-          sed -i "s/\"\\\$PROD_DB_USERNAME\"/\"${{ secrets.PROD_DB_USERNAME }}\"/" backend/.env
-          sed -i "s/\"\\\$PROD_DB_PASSWORD\"/\"${{ secrets.PROD_DB_PASSWORD }}\"/" backend/.env
-          sed -i "s/\"\\\$PROD_DB_NAME\"/\"${{ secrets.PROD_DB_NAME }}\"/" backend/.env
-          sed -i "s/\"\\\$JWT_SECRET\"/\"${{ secrets.JWT_SECRET }}\"/" backend/.env
-
+            echo "PROD_DB_HOST=${{ secrets.PROD_DB_HOST }}" >> backend/.env
+            echo "PROD_DB_PORT=${{ secrets.PROD_DB_PORT }}" >> backend/.env
+            echo "PROD_DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}" >> backend/.env
+            echo "PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> backend/.env
+            echo "PROD_DB_NAME=${{ secrets.PROD_DB_NAME }}" >> backend/.env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> backend/.env
+      
       - name: Copy frontend build to backend nginx directory
         run: |
           mkdir -p backend/nginx/statics/
           cp -R frontend/dist/* backend/nginx/statics/
+
+      
+
+      # # Build frontend regardless of where changes were detected
+      # - name: ⚙️ Setup Node.js for Frontend
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: '20'
+      #     cache: 'npm'
+      #     cache-dependency-path: frontend/package-lock.json
+
+
+        # run: |
+        #   mkdir -p backend
+        #   echo "Creating .env file with secrets (values hidden)"
+        #   echo "PROD_DB_HOST=\"\$PROD_DB_HOST\"" > backend/.env
+        #   echo "PROD_DB_PORT=\"\$PROD_DB_PORT\"" >> backend/.env
+        #   echo "PROD_DB_USERNAME=\"\$PROD_DB_USERNAME\"" >> backend/.env
+        #   echo "PROD_DB_PASSWORD=\"\$PROD_DB_PASSWORD\"" >> backend/.env
+        #   echo "PROD_DB_NAME=\"\$PROD_DB_NAME\"" >> backend/.env
+        #   echo "JWT_SECRET=\"\$JWT_SECRET\"" >> backend/.env
+          
+        #   # Replace placeholders with actual values
+        #   sed -i "s/\"\\\$PROD_DB_HOST\"/\"${{ secrets.PROD_DB_HOST }}\"/" backend/.env
+        #   sed -i "s/\"\\\$PROD_DB_PORT\"/\"${{ secrets.PROD_DB_PORT }}\"/" backend/.env
+        #   sed -i "s/\"\\\$PROD_DB_USERNAME\"/\"${{ secrets.PROD_DB_USERNAME }}\"/" backend/.env
+        #   sed -i "s/\"\\\$PROD_DB_PASSWORD\"/\"${{ secrets.PROD_DB_PASSWORD }}\"/" backend/.env
+        #   sed -i "s/\"\\\$PROD_DB_NAME\"/\"${{ secrets.PROD_DB_NAME }}\"/" backend/.env
+        #   sed -i "s/\"\\\$JWT_SECRET\"/\"${{ secrets.JWT_SECRET }}\"/" backend/.env
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -144,80 +155,51 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+
     steps:
-      - name: 🛎 Checkout code
-        uses: actions/checkout@v3
-
-      - name: Create deployment directory
-        run: mkdir -p deployment
-
-      - name: Generate docker-compose.yml with version
-        run: |
-          cat <<EOF > deployment/docker-compose.yml
-          version: '3.8'
-          services:
-            backend:
-              image: chillbroh98/accessra:${{ needs.build.outputs.version }}
-              restart: always
-              environment:
-                - PROD_DB_HOST=${{ secrets.PROD_DB_HOST }}
-                - PROD_DB_PORT=${{ secrets.PROD_DB_PORT }}
-                - PROD_DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}
-                - PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
-                - PROD_DB_NAME=${{ secrets.PROD_DB_NAME }}
-                - JWT_SECRET=${{ secrets.JWT_SECRET }}
-              ports:
-                - "8080:8080"
-              networks:
-                - app-network
-              healthcheck:
-                test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-                interval: 30s
-                timeout: 10s
-                retries: 3
-                start_period: 40s
-          
-          networks:
-            app-network:
-              driver: bridge
-          EOF
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-      - name: Deploy with docker-compose
-        working-directory: deployment
-        run: |
-          docker-compose pull
-          docker-compose up -d
+      - name: Download task definition
+        run: aws ecs describe-task-definition --task-definition accessra_app --query taskDefinition --output json > task-definition.json
 
-      - name: Wait for services to be healthy
-        run: |
-          echo "Waiting for services to be healthy..."
-          sleep 30
-          
-          # Check if backend service is running
-          if ! docker-compose -f deployment/docker-compose.yml ps | grep -q "backend.*Up"; then
-            echo "Backend service failed to start properly!"
-            docker-compose -f deployment/docker-compose.yml logs
-            exit 1
-          fi
-          
-          echo "Deployment successful and services are running!"
+      - name: Install jq
+        run: sudo apt-get install -y jq
 
-      - name: Create rollback script
+      - name: Prepare clean task definition and update image
         run: |
-          cat <<EOF > deployment/rollback.sh
-          #!/bin/bash
-          echo "Rolling back to previous version..."
-          docker-compose -f docker-compose.yml down
-          docker pull chillbroh98/accessra:${{ needs.build.outputs.version }}
-          docker-compose -f docker-compose.yml up -d
-          echo "Rollback completed."
-          EOF
-          chmod +x deployment/rollback.sh
-          echo "Created rollback script for version ${{ needs.build.outputs.version }}"
+          # Create a clean task definition by removing fields AWS doesn't allow on re-registration
+          jq 'del(.taskDefinitionArn, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .revision, .enableFaultInjection)' task-definition.json > clean-task-def.json
+
+          # Update the image URI in the container definition
+          CONTAINER_NAME="accessra-app"
+          jq --arg IMAGE "chillbroh98/accessra:latest" --arg NAME "$CONTAINER_NAME" '.containerDefinitions |= map(if .name == $NAME then .image = $IMAGE else . end)' clean-task-def.json > updated-task-def.json
+
+      - name: Register new task definition with AWS CLI
+        id: register-task-def
+        run: |
+          NEW_TASK_DEFINITION=$(aws ecs register-task-definition --cli-input-json file://updated-task-def.json --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "task_definition_arn=$NEW_TASK_DEFINITION" >> $GITHUB_OUTPUT
+
+      - name: Deploy to ECS with AWS CLI
+        run: |
+          aws ecs update-service --cluster accessra \
+                                --service accessra_app \
+                                --task-definition ${{ steps.register-task-def.outputs.task_definition_arn }} \
+                                --force-new-deployment
+
+      - name: Wait for service stability
+        run: aws ecs wait services-stable --cluster accessra --services accessra_app
+#        echo "Deployment completed successfully!"
+
+  notify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify deployment success
+        run: echo "Deployment to ECS completed successfully!"
