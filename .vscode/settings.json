@@ -1,6 +1,6 @@
 {
     "sonarlint.connectedMode.project": {
-        "connectionId": "chillbroh",
-        "projectKey": "ChillBroh_Accessra-API"
+        "connectionId": "x-pose",
+        "projectKey": "X-pose_Accessra-Microservice---CTSE-Assignment"
     }
 }
