@@ -31,7 +31,7 @@ export class AuthService {
       where: { email },
     });
     if (existingUser) {
-      throw new UnauthorizedException('User already exists');
+      throw new UnauthorizedException('User already exists'); //trow exception
     }
 
     // Check if tenant name is already taken
