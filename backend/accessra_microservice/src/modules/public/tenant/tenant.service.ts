@@ -9,7 +9,7 @@ import { getTenantConnection } from '../../tenancy/tenancy.utils';
 export class TenantService {
   constructor(
     @InjectRepository(Tenant)
-    private readonly tenantRepository: Repository<Tenant>,
+    // private readonly tenantRepository: Repository<Tenant>,
     private readonly dataSource: DataSource,
   ) {}
 
