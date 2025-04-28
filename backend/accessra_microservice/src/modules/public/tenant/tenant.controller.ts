@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { TenantService } from './tenant.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
-import { Tenant } from '../entities/tenant.entity';
+// import { Tenant } from '../entities/tenant.entity';
 
 @Controller('tenant')
 export class TenantController {
