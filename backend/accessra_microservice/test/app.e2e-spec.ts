@@ -29,10 +29,12 @@ describe('AccessRA Microservice (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     // Configure the app with the same settings as in main.ts
-    app.useGlobalPipes(new ValidationPipe({
-      whitelist: true,
-      transform: true,
-    }));
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+      }),
+    );
     await app.init();
   });
 
@@ -68,9 +70,7 @@ describe('AccessRA Microservice (e2e)', () => {
 
   describe('User endpoints', () => {
     it('/users (GET) should require authentication', () => {
-      return request(app.getHttpServer())
-        .get('/users')
-        .expect(401);
+      return request(app.getHttpServer()).get('/users').expect(401);
     });
   });
 });
