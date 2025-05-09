@@ -208,13 +208,13 @@ jobs:
 
       - name: Deploy to ECS with AWS CLI
         run: |
-          aws ecs update-service --cluster accessra \
-                                --service accessra_app \
+          aws ecs update-service --cluster accessra-cluster \
+                                --service accessra-only-service \
                                 --task-definition ${{ steps.register-task-def.outputs.task_definition_arn }} \
                                 --force-new-deployment
 
       - name: Wait for service stability
-        run: aws ecs wait services-stable --cluster accessra --services accessra_app
+        run: aws ecs wait services-stable --cluster accessra-cluster --services accessra-only-service
   #        echo "Deployment completed successfully!"
 
   notify:
