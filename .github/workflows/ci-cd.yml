@@ -15,8 +15,8 @@ jobs:
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: |
             backend/accessra_microservice/package-lock.json
             frontend/package-lock.json
@@ -65,8 +65,8 @@ jobs:
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: |
             backend/accessra_microservice/package-lock.json
             frontend/package-lock.json
@@ -92,19 +92,17 @@ jobs:
 
       - name: 🔒 Create .env file for Docker build
         run: |
-            echo "PROD_DB_HOST=${{ secrets.PROD_DB_HOST }}" >> backend/.env
-            echo "PROD_DB_PORT=${{ secrets.PROD_DB_PORT }}" >> backend/.env
-            echo "PROD_DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}" >> backend/.env
-            echo "PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> backend/.env
-            echo "PROD_DB_NAME=${{ secrets.PROD_DB_NAME }}" >> backend/.env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> backend/.env
-      
+          echo "PROD_DB_HOST=${{ secrets.PROD_DB_HOST }}" >> backend/.env
+          echo "PROD_DB_PORT=${{ secrets.PROD_DB_PORT }}" >> backend/.env
+          echo "PROD_DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}" >> backend/.env
+          echo "PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> backend/.env
+          echo "PROD_DB_NAME=${{ secrets.PROD_DB_NAME }}" >> backend/.env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> backend/.env
+
       - name: Copy frontend build to backend nginx directory
         run: |
           mkdir -p backend/nginx/statics/
           cp -R frontend/dist/* backend/nginx/statics/
-
-      
 
       # # Build frontend regardless of where changes were detected
       # - name: ⚙️ Setup Node.js for Frontend
@@ -114,24 +112,23 @@ jobs:
       #     cache: 'npm'
       #     cache-dependency-path: frontend/package-lock.json
 
+      # run: |
+      #   mkdir -p backend
+      #   echo "Creating .env file with secrets (values hidden)"
+      #   echo "PROD_DB_HOST=\"\$PROD_DB_HOST\"" > backend/.env
+      #   echo "PROD_DB_PORT=\"\$PROD_DB_PORT\"" >> backend/.env
+      #   echo "PROD_DB_USERNAME=\"\$PROD_DB_USERNAME\"" >> backend/.env
+      #   echo "PROD_DB_PASSWORD=\"\$PROD_DB_PASSWORD\"" >> backend/.env
+      #   echo "PROD_DB_NAME=\"\$PROD_DB_NAME\"" >> backend/.env
+      #   echo "JWT_SECRET=\"\$JWT_SECRET\"" >> backend/.env
 
-        # run: |
-        #   mkdir -p backend
-        #   echo "Creating .env file with secrets (values hidden)"
-        #   echo "PROD_DB_HOST=\"\$PROD_DB_HOST\"" > backend/.env
-        #   echo "PROD_DB_PORT=\"\$PROD_DB_PORT\"" >> backend/.env
-        #   echo "PROD_DB_USERNAME=\"\$PROD_DB_USERNAME\"" >> backend/.env
-        #   echo "PROD_DB_PASSWORD=\"\$PROD_DB_PASSWORD\"" >> backend/.env
-        #   echo "PROD_DB_NAME=\"\$PROD_DB_NAME\"" >> backend/.env
-        #   echo "JWT_SECRET=\"\$JWT_SECRET\"" >> backend/.env
-          
-        #   # Replace placeholders with actual values
-        #   sed -i "s/\"\\\$PROD_DB_HOST\"/\"${{ secrets.PROD_DB_HOST }}\"/" backend/.env
-        #   sed -i "s/\"\\\$PROD_DB_PORT\"/\"${{ secrets.PROD_DB_PORT }}\"/" backend/.env
-        #   sed -i "s/\"\\\$PROD_DB_USERNAME\"/\"${{ secrets.PROD_DB_USERNAME }}\"/" backend/.env
-        #   sed -i "s/\"\\\$PROD_DB_PASSWORD\"/\"${{ secrets.PROD_DB_PASSWORD }}\"/" backend/.env
-        #   sed -i "s/\"\\\$PROD_DB_NAME\"/\"${{ secrets.PROD_DB_NAME }}\"/" backend/.env
-        #   sed -i "s/\"\\\$JWT_SECRET\"/\"${{ secrets.JWT_SECRET }}\"/" backend/.env
+      #   # Replace placeholders with actual values
+      #   sed -i "s/\"\\\$PROD_DB_HOST\"/\"${{ secrets.PROD_DB_HOST }}\"/" backend/.env
+      #   sed -i "s/\"\\\$PROD_DB_PORT\"/\"${{ secrets.PROD_DB_PORT }}\"/" backend/.env
+      #   sed -i "s/\"\\\$PROD_DB_USERNAME\"/\"${{ secrets.PROD_DB_USERNAME }}\"/" backend/.env
+      #   sed -i "s/\"\\\$PROD_DB_PASSWORD\"/\"${{ secrets.PROD_DB_PASSWORD }}\"/" backend/.env
+      #   sed -i "s/\"\\\$PROD_DB_NAME\"/\"${{ secrets.PROD_DB_NAME }}\"/" backend/.env
+      #   sed -i "s/\"\\\$JWT_SECRET\"/\"${{ secrets.JWT_SECRET }}\"/" backend/.env
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -178,7 +175,30 @@ jobs:
 
           # Update the image URI in the container definition
           CONTAINER_NAME="accessra-app"
-          jq --arg IMAGE "chillbroh98/accessra:latest" --arg NAME "$CONTAINER_NAME" '.containerDefinitions |= map(if .name == $NAME then .image = $IMAGE else . end)' clean-task-def.json > updated-task-def.json
+          # Update the image URI and inject environment variables
+          jq --arg IMAGE "chillbroh98/accessra:latest" --arg NAME "$CONTAINER_NAME" \
+            --arg PROD_DB_HOST "${{ secrets.PROD_DB_HOST }}" \
+            --arg PROD_DB_PORT "${{ secrets.PROD_DB_PORT }}" \
+            --arg PROD_DB_USERNAME "${{ secrets.PROD_DB_USERNAME }}" \
+            --arg PROD_DB_PASSWORD "${{ secrets.PROD_DB_PASSWORD }}" \
+            --arg PROD_DB_NAME "${{ secrets.PROD_DB_NAME }}" \
+            --arg JWT_SECRET "${{ secrets.JWT_SECRET }}" \
+            '
+            .containerDefinitions |= map(
+              if .name == $NAME then
+                .image = $IMAGE |
+                .environment = [
+                  { "name": "PROD_DB_HOST", "value": $PROD_DB_HOST },
+                  { "name": "PROD_DB_PORT", "value": $PROD_DB_PORT },
+                  { "name": "PROD_DB_USERNAME", "value": $PROD_DB_USERNAME },
+                  { "name": "PROD_DB_PASSWORD", "value": $PROD_DB_PASSWORD },
+                  { "name": "PROD_DB_NAME", "value": $PROD_DB_NAME },
+                  { "name": "JWT_SECRET", "value": $JWT_SECRET }
+                ]
+              else .
+              end
+            )
+            ' clean-task-def.json > updated-task-def.json
 
       - name: Register new task definition with AWS CLI
         id: register-task-def
@@ -195,7 +215,7 @@ jobs:
 
       - name: Wait for service stability
         run: aws ecs wait services-stable --cluster accessra --services accessra_app
-#        echo "Deployment completed successfully!"
+  #        echo "Deployment completed successfully!"
 
   notify:
     needs: deploy
