@@ -17,7 +17,7 @@ export class AuthController {
     return this.authService.signIn(signInDto);
   }
 
-  
+  //health check endpoint
   @Get('/')
   healthCheck() {
     return this.authService.healthCheck();
